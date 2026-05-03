@@ -54,6 +54,8 @@ resume-analyzer/
 ```
 
 ---
+## Live Demo
+https://ai-resume-analyzer-a6lz.onrender.com
 
 ##  Run Locally
 
