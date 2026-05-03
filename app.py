@@ -7,7 +7,7 @@ import os
 
 app = Flask(__name__)
 
-# Load spaCy model (lightweight)
+
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -20,7 +20,7 @@ def extract_text_from_pdf(file):
     return text.lower()
 
 
-# 🧠 Extract keywords (works for all domains)
+
 def extract_keywords(text):
     doc = nlp(text)
     keywords = []
@@ -32,7 +32,7 @@ def extract_keywords(text):
     return list(set(keywords))
 
 
-# 🤖 Lightweight similarity (no heavy models)
+
 def get_similarity(resume, job_desc):
     tfidf = TfidfVectorizer()
     vectors = tfidf.fit_transform([resume, job_desc])
@@ -52,16 +52,16 @@ def index():
 
         resume_text = extract_text_from_pdf(file)
 
-        # ✅ Use lightweight similarity
+       
         score = get_similarity(resume_text, job_desc)
 
-        # 🔍 Keyword comparison
+      
         resume_keywords = extract_keywords(resume_text)
         job_keywords = extract_keywords(job_desc)
 
         missing_skills = list(set(job_keywords) - set(resume_keywords))
 
-        # 💡 Suggestions
+        
         if missing_skills:
             suggestions.append(
                 "You may consider adding: " + ", ".join(missing_skills[:10])
@@ -77,7 +77,7 @@ def index():
     )
 
 
-# 🚀 Required for Render deployment
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
