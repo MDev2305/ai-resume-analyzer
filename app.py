@@ -1,16 +1,17 @@
 from flask import Flask, render_template, request
 import PyPDF2
 import spacy
-from sentence_transformers import SentenceTransformer, util
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import os
 
 app = Flask(__name__)
 
-
+# Load spaCy model (lightweight)
 nlp = spacy.load("en_core_web_sm")
-model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
-
+# 📄 Extract text from PDF
 def extract_text_from_pdf(file):
     pdf = PyPDF2.PdfReader(file)
     text = ""
@@ -19,7 +20,7 @@ def extract_text_from_pdf(file):
     return text.lower()
 
 
-
+# 🧠 Extract keywords (works for all domains)
 def extract_keywords(text):
     doc = nlp(text)
     keywords = []
@@ -31,12 +32,12 @@ def extract_keywords(text):
     return list(set(keywords))
 
 
-
-def semantic_score(resume, job_desc):
-    emb1 = model.encode(resume, convert_to_tensor=True)
-    emb2 = model.encode(job_desc, convert_to_tensor=True)
-    score = util.cos_sim(emb1, emb2)
-    return round(float(score) * 100, 2)
+# 🤖 Lightweight similarity (no heavy models)
+def get_similarity(resume, job_desc):
+    tfidf = TfidfVectorizer()
+    vectors = tfidf.fit_transform([resume, job_desc])
+    score = cosine_similarity(vectors[0], vectors[1])[0][0]
+    return round(score * 100, 2)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -51,16 +52,16 @@ def index():
 
         resume_text = extract_text_from_pdf(file)
 
-        
-        score = semantic_score(resume_text, job_desc)
+        # ✅ Use lightweight similarity
+        score = get_similarity(resume_text, job_desc)
 
-       
+        # 🔍 Keyword comparison
         resume_keywords = extract_keywords(resume_text)
         job_keywords = extract_keywords(job_desc)
 
         missing_skills = list(set(job_keywords) - set(resume_keywords))
 
-       
+        # 💡 Suggestions
         if missing_skills:
             suggestions.append(
                 "You may consider adding: " + ", ".join(missing_skills[:10])
@@ -76,8 +77,7 @@ def index():
     )
 
 
-import os
-
+# 🚀 Required for Render deployment
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
